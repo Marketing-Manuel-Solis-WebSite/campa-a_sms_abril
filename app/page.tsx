@@ -22,10 +22,20 @@ export default function Home() {
 
   /* ── Tap-to-start: required for autoplay with sound on mobile ── */
   const startIntro = useCallback(() => {
+    const video = introVideoRef.current;
+    if (video) {
+      video.muted = false;
+      video.volume = 1;
+      video.currentTime = 0;
+      video.play().catch(() => {
+        video.muted = true;
+        video.play().catch(() => {});
+      });
+    }
     setPhase("intro");
   }, []);
 
-  /* ── Intro video lifecycle ── */
+  /* ── Intro video time tracking & anti-pause ── */
   useEffect(() => {
     if (phase !== "intro") return;
     const video = introVideoRef.current;
@@ -38,7 +48,6 @@ export default function Home() {
       }
     };
 
-    /* Prevent user from pausing */
     const onPause = () => {
       if (video.currentTime < INTRO_SECONDS && !transitioned.current) {
         video.play();
@@ -48,17 +57,6 @@ export default function Home() {
     video.addEventListener("timeupdate", onTimeUpdate);
     video.addEventListener("pause", onPause);
 
-    /* Play with sound — user already tapped so autoplay is allowed */
-    video.muted = false;
-    video.volume = 1;
-    video.play().catch(() => {
-      /* Fallback: play muted if browser still blocks */
-      video.muted = true;
-      video.play().catch(() => {
-        setTimeout(goToMain, INTRO_SECONDS * 1000);
-      });
-    });
-
     return () => {
       video.removeEventListener("timeupdate", onTimeUpdate);
       video.removeEventListener("pause", onPause);
@@ -67,6 +65,18 @@ export default function Home() {
 
   return (
     <>
+      {/* ── Video element always in DOM so it preloads ── */}
+      <video
+        ref={introVideoRef}
+        className="fixed inset-0 w-full h-full object-cover pointer-events-none z-[51]"
+        src="/VideoInicio.mp4"
+        playsInline
+        preload="auto"
+        style={{
+          display: phase === "intro" ? "block" : "none",
+        }}
+      />
+
       {/* ═══════════ TAP TO START (enables sound autoplay) ═══════════ */}
       {phase === "tap" && (
         <div
@@ -99,23 +109,15 @@ export default function Home() {
       {/* ═══════════ INTRO: 15-second video with sound ═══════════ */}
       {phase === "intro" && (
         <div className="fixed inset-0 z-50 bg-black overflow-hidden">
-          <video
-            ref={introVideoRef}
-            className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-            src="/VideoInicio.mp4"
-            playsInline
-            preload="auto"
-          />
-
           {/* Block all touch/click on the video area */}
           <div
-            className="absolute inset-0 z-[1]"
+            className="absolute inset-0 z-[52]"
             onContextMenu={(e) => e.preventDefault()}
           />
 
           {/* Cinematic vignette */}
           <div
-            className="absolute inset-0 pointer-events-none z-[2]"
+            className="absolute inset-0 pointer-events-none z-[53]"
             style={{
               background:
                 "radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.7) 100%)",
@@ -125,13 +127,13 @@ export default function Home() {
           {/* Skip */}
           <button
             onClick={goToMain}
-            className="absolute bottom-8 right-6 sm:right-8 z-[3] px-5 py-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/25 transition-all text-xs sm:text-sm font-medium tracking-widest uppercase border border-white/20"
+            className="absolute bottom-8 right-6 sm:right-8 z-[54] px-5 py-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/25 transition-all text-xs sm:text-sm font-medium tracking-widest uppercase border border-white/20"
           >
             Saltar
           </button>
 
           {/* Progress bar */}
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10 z-[3]">
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10 z-[54]">
             <div
               className="h-full rounded-r-full"
               style={{
@@ -220,24 +222,23 @@ export default function Home() {
           </div>
 
           {/* ── Center: Title + YouTube Video ── */}
-          <div className="relative z-10 flex-1 flex flex-col items-center justify-center min-h-0 w-full gap-1.5 sm:gap-3 py-1">
+          <div className="relative z-10 flex-1 flex flex-col items-center justify-center min-h-0 w-full gap-1.5 sm:gap-2 py-1">
             {/* Title */}
             <div className="text-center shrink-0">
-              <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-gradient-gold leading-none">
+              <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-black tracking-tight text-gradient-gold leading-none">
                 CASO REAL DE ÉXITO
               </h1>
-              <p className="text-[10px] sm:text-xs md:text-sm text-navy/70 max-w-[280px] sm:max-w-md mx-auto mt-1 leading-snug">
+              <p className="text-[10px] sm:text-xs md:text-sm text-navy/70 max-w-[260px] sm:max-w-sm mx-auto mt-1 leading-snug">
                 Conoce este caso real de reunificación familiar, respaldado por
                 los 35 años de experiencia de la Firma del Abogado Manuel Solís.
               </p>
             </div>
 
-            {/* YouTube video — sized to fill available space */}
+            {/* YouTube video */}
             <div
-              className="aspect-video rounded-lg sm:rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(197,165,90,0.35)] border-2 border-gold/30 relative shrink"
+              className="aspect-video rounded-lg sm:rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(197,165,90,0.35)] border-2 border-gold/30 relative"
               style={{
-                width: "min(94vw, calc(52dvh * 16 / 9), 820px)",
-                minHeight: 0,
+                width: "min(88vw, calc(36dvh * 16 / 9), 560px)",
               }}
             >
               <iframe
