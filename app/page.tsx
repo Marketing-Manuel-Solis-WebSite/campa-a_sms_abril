@@ -7,9 +7,7 @@ const YOUTUBE_ID = "3Z6BOOCBgas";
 const INTRO_SECONDS = 15;
 
 export default function Home() {
-  const [phase, setPhase] = useState<"tap" | "intro" | "flash" | "main">(
-    "tap"
-  );
+  const [phase, setPhase] = useState<"intro" | "flash" | "main">("intro");
   const introVideoRef = useRef<HTMLVideoElement>(null);
   const transitioned = useRef(false);
 
@@ -20,22 +18,7 @@ export default function Home() {
     setTimeout(() => setPhase("main"), 800);
   }, []);
 
-  /* ── Tap-to-start: required for autoplay with sound on mobile ── */
-  const startIntro = useCallback(() => {
-    const video = introVideoRef.current;
-    if (video) {
-      video.muted = false;
-      video.volume = 1;
-      video.currentTime = 0;
-      video.play().catch(() => {
-        video.muted = true;
-        video.play().catch(() => {});
-      });
-    }
-    setPhase("intro");
-  }, []);
-
-  /* ── Intro video time tracking & anti-pause ── */
+  /* ── Intro video: autoplay with sound, fallback to muted ── */
   useEffect(() => {
     if (phase !== "intro") return;
     const video = introVideoRef.current;
@@ -57,6 +40,16 @@ export default function Home() {
     video.addEventListener("timeupdate", onTimeUpdate);
     video.addEventListener("pause", onPause);
 
+    /* Try with sound first, fall back to muted */
+    video.muted = false;
+    video.volume = 1;
+    video.play().catch(() => {
+      video.muted = true;
+      video.play().catch(() => {
+        setTimeout(goToMain, INTRO_SECONDS * 1000);
+      });
+    });
+
     return () => {
       video.removeEventListener("timeupdate", onTimeUpdate);
       video.removeEventListener("pause", onPause);
@@ -65,59 +58,26 @@ export default function Home() {
 
   return (
     <>
-      {/* ── Video element always in DOM so it preloads ── */}
-      <video
-        ref={introVideoRef}
-        className="fixed inset-0 w-full h-full object-cover pointer-events-none z-[51]"
-        src="/VideoInicio.mp4"
-        playsInline
-        preload="auto"
-        style={{
-          display: phase === "intro" ? "block" : "none",
-        }}
-      />
-
-      {/* ═══════════ TAP TO START (enables sound autoplay) ═══════════ */}
-      {phase === "tap" && (
-        <div
-          className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center cursor-pointer select-none"
-          onClick={startIntro}
-        >
-          <Image
-            src="/LogoManuelSolis.png"
-            alt="Manuel Solis"
-            width={280}
-            height={70}
-            preload
-            className="w-48 sm:w-64 h-auto mb-8 brightness-0 invert"
-          />
-          <div className="play-btn animate-pulseGlow">
-            <svg
-              viewBox="0 0 24 24"
-              className="w-8 h-8 sm:w-10 sm:h-10 ml-1"
-              fill="white"
-            >
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </div>
-          <p className="text-white/60 text-xs sm:text-sm mt-6 tracking-widest uppercase">
-            Toca para comenzar
-          </p>
-        </div>
-      )}
-
-      {/* ═══════════ INTRO: 15-second video with sound ═══════════ */}
+      {/* ═══════════ INTRO: 15-second video ═══════════ */}
       {phase === "intro" && (
         <div className="fixed inset-0 z-50 bg-black overflow-hidden">
-          {/* Block all touch/click on the video area */}
+          <video
+            ref={introVideoRef}
+            className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+            src="/VideoInicio.mp4"
+            playsInline
+            preload="auto"
+          />
+
+          {/* Block all interaction */}
           <div
-            className="absolute inset-0 z-[52]"
+            className="absolute inset-0 z-[1]"
             onContextMenu={(e) => e.preventDefault()}
           />
 
           {/* Cinematic vignette */}
           <div
-            className="absolute inset-0 pointer-events-none z-[53]"
+            className="absolute inset-0 pointer-events-none z-[2]"
             style={{
               background:
                 "radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.7) 100%)",
@@ -127,13 +87,13 @@ export default function Home() {
           {/* Skip */}
           <button
             onClick={goToMain}
-            className="absolute bottom-8 right-6 sm:right-8 z-[54] px-5 py-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/25 transition-all text-xs sm:text-sm font-medium tracking-widest uppercase border border-white/20"
+            className="absolute bottom-8 right-6 sm:right-8 z-[3] px-5 py-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/25 transition-all text-xs sm:text-sm font-medium tracking-widest uppercase border border-white/20"
           >
             Saltar
           </button>
 
           {/* Progress bar */}
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10 z-[54]">
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10 z-[3]">
             <div
               className="h-full rounded-r-full"
               style={{
@@ -150,7 +110,7 @@ export default function Home() {
         <div className="fixed inset-0 z-50 bg-white animate-flash" />
       )}
 
-      {/* ═══════════ MAIN: Everything visible without scrolling ═══════════ */}
+      {/* ═══════════ MAIN ═══════════ */}
       <div className={phase === "main" ? "animate-fadeIn" : "hidden"}>
         <main
           className="overflow-hidden flex flex-col items-center px-3 sm:px-5 py-2 sm:py-4 md:py-6 relative"
@@ -164,45 +124,17 @@ export default function Home() {
                 "linear-gradient(180deg, #FFFFFF 0%, #FBF7EC 12%, #F0E4C0 30%, #E5D5A0 48%, #C5A55A 55%, #E5D5A0 62%, #F0E4C0 75%, #FBF7EC 88%, #FFFFFF 100%)",
             }}
           >
-            <svg
-              className="absolute top-[8%] left-0 w-full h-[100px] opacity-[0.06]"
-              viewBox="0 0 1440 100"
-              preserveAspectRatio="none"
-            >
-              <path
-                fill="#0D1B3E"
-                d="M0,50 C360,100 720,0 1440,70 L1440,100 L0,100 Z"
-              />
+            <svg className="absolute top-[8%] left-0 w-full h-[100px] opacity-[0.06]" viewBox="0 0 1440 100" preserveAspectRatio="none">
+              <path fill="#0D1B3E" d="M0,50 C360,100 720,0 1440,70 L1440,100 L0,100 Z" />
             </svg>
-            <svg
-              className="absolute top-[38%] left-0 w-full h-[100px] opacity-[0.04]"
-              viewBox="0 0 1440 100"
-              preserveAspectRatio="none"
-            >
-              <path
-                fill="#1A3A6B"
-                d="M0,20 C480,90 960,10 1440,60 L1440,100 L0,100 Z"
-              />
+            <svg className="absolute top-[38%] left-0 w-full h-[100px] opacity-[0.04]" viewBox="0 0 1440 100" preserveAspectRatio="none">
+              <path fill="#1A3A6B" d="M0,20 C480,90 960,10 1440,60 L1440,100 L0,100 Z" />
             </svg>
-            <svg
-              className="absolute bottom-[18%] left-0 w-full h-[100px] opacity-[0.06]"
-              viewBox="0 0 1440 100"
-              preserveAspectRatio="none"
-            >
-              <path
-                fill="#0D1B3E"
-                d="M0,70 C240,10 720,90 1440,30 L1440,100 L0,100 Z"
-              />
+            <svg className="absolute bottom-[18%] left-0 w-full h-[100px] opacity-[0.06]" viewBox="0 0 1440 100" preserveAspectRatio="none">
+              <path fill="#0D1B3E" d="M0,70 C240,10 720,90 1440,30 L1440,100 L0,100 Z" />
             </svg>
-            <svg
-              className="absolute bottom-[2%] left-0 w-full h-[60px] opacity-[0.03]"
-              viewBox="0 0 1440 60"
-              preserveAspectRatio="none"
-            >
-              <path
-                fill="#1A3A6B"
-                d="M0,30 C360,60 1080,0 1440,45 L1440,60 L0,60 Z"
-              />
+            <svg className="absolute bottom-[2%] left-0 w-full h-[60px] opacity-[0.03]" viewBox="0 0 1440 60" preserveAspectRatio="none">
+              <path fill="#1A3A6B" d="M0,30 C360,60 1080,0 1440,45 L1440,60 L0,60 Z" />
             </svg>
             <div className="absolute top-[20%] left-[5%] w-48 h-48 bg-gold/10 rounded-full blur-3xl" />
             <div className="absolute bottom-[20%] right-[5%] w-56 h-56 bg-gold/10 rounded-full blur-3xl" />
@@ -223,7 +155,6 @@ export default function Home() {
 
           {/* ── Center: Title + YouTube Video ── */}
           <div className="relative z-10 flex-1 flex flex-col items-center justify-center min-h-0 w-full gap-1.5 sm:gap-2 py-1">
-            {/* Title */}
             <div className="text-center shrink-0">
               <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-black tracking-tight text-gradient-gold leading-none">
                 CASO REAL DE ÉXITO
