@@ -7,7 +7,9 @@ const YOUTUBE_ID = "3Z6BOOCBgas";
 const INTRO_SECONDS = 15;
 
 export default function Home() {
-  const [phase, setPhase] = useState<"intro" | "flash" | "main">("intro");
+  const [phase, setPhase] = useState<"tap" | "intro" | "flash" | "main">(
+    "tap"
+  );
   const introVideoRef = useRef<HTMLVideoElement>(null);
   const transitioned = useRef(false);
 
@@ -18,6 +20,12 @@ export default function Home() {
     setTimeout(() => setPhase("main"), 800);
   }, []);
 
+  /* ── Tap-to-start: required for autoplay with sound on mobile ── */
+  const startIntro = useCallback(() => {
+    setPhase("intro");
+  }, []);
+
+  /* ── Intro video lifecycle ── */
   useEffect(() => {
     if (phase !== "intro") return;
     const video = introVideoRef.current;
@@ -30,32 +38,84 @@ export default function Home() {
       }
     };
 
+    /* Prevent user from pausing */
+    const onPause = () => {
+      if (video.currentTime < INTRO_SECONDS && !transitioned.current) {
+        video.play();
+      }
+    };
+
     video.addEventListener("timeupdate", onTimeUpdate);
+    video.addEventListener("pause", onPause);
+
+    /* Play with sound — user already tapped so autoplay is allowed */
+    video.muted = false;
+    video.volume = 1;
     video.play().catch(() => {
-      // Autoplay blocked — skip to main after timeout
-      setTimeout(goToMain, INTRO_SECONDS * 1000);
+      /* Fallback: play muted if browser still blocks */
+      video.muted = true;
+      video.play().catch(() => {
+        setTimeout(goToMain, INTRO_SECONDS * 1000);
+      });
     });
 
-    return () => video.removeEventListener("timeupdate", onTimeUpdate);
+    return () => {
+      video.removeEventListener("timeupdate", onTimeUpdate);
+      video.removeEventListener("pause", onPause);
+    };
   }, [phase, goToMain]);
 
   return (
     <>
-      {/* ═══════════ INTRO: 15-second local video teaser ═══════════ */}
+      {/* ═══════════ TAP TO START (enables sound autoplay) ═══════════ */}
+      {phase === "tap" && (
+        <div
+          className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center cursor-pointer select-none"
+          onClick={startIntro}
+        >
+          <Image
+            src="/LogoManuelSolis.png"
+            alt="Manuel Solis"
+            width={280}
+            height={70}
+            preload
+            className="w-48 sm:w-64 h-auto mb-8 brightness-0 invert"
+          />
+          <div className="play-btn animate-pulseGlow">
+            <svg
+              viewBox="0 0 24 24"
+              className="w-8 h-8 sm:w-10 sm:h-10 ml-1"
+              fill="white"
+            >
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+          <p className="text-white/60 text-xs sm:text-sm mt-6 tracking-widest uppercase">
+            Toca para comenzar
+          </p>
+        </div>
+      )}
+
+      {/* ═══════════ INTRO: 15-second video with sound ═══════════ */}
       {phase === "intro" && (
         <div className="fixed inset-0 z-50 bg-black overflow-hidden">
           <video
             ref={introVideoRef}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover pointer-events-none"
             src="/VideoInicio.mp4"
-            muted
             playsInline
             preload="auto"
           />
 
+          {/* Block all touch/click on the video area */}
+          <div
+            className="absolute inset-0 z-[1]"
+            onContextMenu={(e) => e.preventDefault()}
+          />
+
           {/* Cinematic vignette */}
           <div
-            className="absolute inset-0 pointer-events-none"
+            className="absolute inset-0 pointer-events-none z-[2]"
             style={{
               background:
                 "radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.7) 100%)",
@@ -65,13 +125,13 @@ export default function Home() {
           {/* Skip */}
           <button
             onClick={goToMain}
-            className="absolute bottom-8 right-6 sm:right-8 z-10 px-5 py-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/25 transition-all text-xs sm:text-sm font-medium tracking-widest uppercase border border-white/20"
+            className="absolute bottom-8 right-6 sm:right-8 z-[3] px-5 py-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/25 transition-all text-xs sm:text-sm font-medium tracking-widest uppercase border border-white/20"
           >
             Saltar
           </button>
 
           {/* Progress bar */}
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10 z-10">
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10 z-[3]">
             <div
               className="h-full rounded-r-full"
               style={{
@@ -88,10 +148,13 @@ export default function Home() {
         <div className="fixed inset-0 z-50 bg-white animate-flash" />
       )}
 
-      {/* ═══════════ MAIN: Single screen, no scroll ═══════════ */}
+      {/* ═══════════ MAIN: Everything visible without scrolling ═══════════ */}
       <div className={phase === "main" ? "animate-fadeIn" : "hidden"}>
-        <main className="h-screen overflow-hidden flex flex-col items-center px-4 sm:px-6 py-4 sm:py-6 md:py-8 relative">
-          {/* ── Background: Gold/White/Cream waves with blue accents ── */}
+        <main
+          className="overflow-hidden flex flex-col items-center px-3 sm:px-5 py-2 sm:py-4 md:py-6 relative"
+          style={{ height: "100dvh" }}
+        >
+          {/* ── Background ── */}
           <div
             className="absolute inset-0 z-0"
             style={{
@@ -99,7 +162,6 @@ export default function Home() {
                 "linear-gradient(180deg, #FFFFFF 0%, #FBF7EC 12%, #F0E4C0 30%, #E5D5A0 48%, #C5A55A 55%, #E5D5A0 62%, #F0E4C0 75%, #FBF7EC 88%, #FFFFFF 100%)",
             }}
           >
-            {/* Blue wave accents (subtle) */}
             <svg
               className="absolute top-[8%] left-0 w-full h-[100px] opacity-[0.06]"
               viewBox="0 0 1440 100"
@@ -140,41 +202,42 @@ export default function Home() {
                 d="M0,30 C360,60 1080,0 1440,45 L1440,60 L0,60 Z"
               />
             </svg>
-            {/* Gold shimmer glows */}
             <div className="absolute top-[20%] left-[5%] w-48 h-48 bg-gold/10 rounded-full blur-3xl" />
             <div className="absolute bottom-[20%] right-[5%] w-56 h-56 bg-gold/10 rounded-full blur-3xl" />
             <div className="absolute top-[55%] left-1/2 -translate-x-1/2 w-72 h-32 bg-gold/8 rounded-full blur-3xl" />
           </div>
 
-          {/* ── Logo (no white background, blend with gold/cream bg) ── */}
+          {/* ── Logo ── */}
           <div className="relative z-10 shrink-0">
             <Image
               src="/LogoManuelSolis.png"
               alt="Law Offices of Manuel Solis"
-              width={320}
-              height={80}
-              priority
-              className="h-14 sm:h-18 md:h-22 w-auto mix-blend-multiply"
+              width={280}
+              height={70}
+              preload
+              className="h-9 sm:h-12 md:h-16 w-auto mix-blend-multiply"
             />
           </div>
 
-          {/* ── Center: Title + Video ── */}
-          <div className="relative z-10 flex-1 flex flex-col items-center justify-center min-h-0 w-full gap-3 sm:gap-4 py-2">
+          {/* ── Center: Title + YouTube Video ── */}
+          <div className="relative z-10 flex-1 flex flex-col items-center justify-center min-h-0 w-full gap-1.5 sm:gap-3 py-1">
             {/* Title */}
             <div className="text-center shrink-0">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-gradient-gold leading-none">
+              <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-gradient-gold leading-none">
                 CASO REAL DE ÉXITO
               </h1>
-              <p className="text-xs sm:text-sm md:text-base text-navy/70 max-w-md mx-auto mt-1.5 sm:mt-2 leading-snug">
-                Conoce este caso real de reunificación familiar, respaldado por los 35 años de experiencia de la Firma del Abogado Manuel Solís.
+              <p className="text-[10px] sm:text-xs md:text-sm text-navy/70 max-w-[280px] sm:max-w-md mx-auto mt-1 leading-snug">
+                Conoce este caso real de reunificación familiar, respaldado por
+                los 35 años de experiencia de la Firma del Abogado Manuel Solís.
               </p>
             </div>
 
-            {/* Video container */}
+            {/* YouTube video — sized to fill available space */}
             <div
-              className="aspect-video rounded-xl sm:rounded-2xl overflow-hidden shadow-[0_10px_50px_rgba(197,165,90,0.35)] border-2 border-gold/30 relative"
+              className="aspect-video rounded-lg sm:rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(197,165,90,0.35)] border-2 border-gold/30 relative shrink"
               style={{
-                width: "min(92vw, calc(44vh * 16 / 9), 820px)",
+                width: "min(94vw, calc(52dvh * 16 / 9), 820px)",
+                minHeight: 0,
               }}
             >
               <iframe
@@ -187,10 +250,14 @@ export default function Home() {
             </div>
           </div>
 
-          {/* ── CTA Text ── */}
-          <div className="relative z-10 shrink-0 text-center max-w-sm mx-auto px-2">
-            <p className="text-sm sm:text-base md:text-lg text-navy/80 font-medium leading-snug">
-              Responde <span className="font-bold text-navy">&ldquo;ME INTERESA&rdquo;</span> a este mismo SMS y te contactaremos hoy para retomar tu consulta.
+          {/* ── CTA ── */}
+          <div className="relative z-10 shrink-0 text-center max-w-[300px] sm:max-w-sm mx-auto pb-1">
+            <p className="text-[11px] sm:text-sm md:text-base text-navy/80 font-medium leading-snug">
+              Responde{" "}
+              <span className="font-bold text-navy">
+                &ldquo;ME INTERESA&rdquo;
+              </span>{" "}
+              a este mismo SMS y te contactaremos hoy para retomar tu consulta.
             </p>
           </div>
         </main>
