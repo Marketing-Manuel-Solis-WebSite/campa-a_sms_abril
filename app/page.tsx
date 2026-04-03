@@ -20,6 +20,8 @@ export default function Home() {
     setTimeout(() => setPhase("main"), 800);
   }, []);
 
+  const [showUnmuteHint, setShowUnmuteHint] = useState(false);
+
   useEffect(() => {
     const video = introVideoRef.current;
     if (!video) return;
@@ -31,6 +33,7 @@ export default function Home() {
       if (v && v.muted) {
         v.muted = false;
         v.volume = 1;
+        setShowUnmuteHint(false);
       }
     };
 
@@ -38,7 +41,18 @@ export default function Home() {
     document.addEventListener("touchstart", unmute, { once: true });
     document.addEventListener("click", unmute, { once: true });
 
-    video.play().catch(() => {});
+    // Try to play with audio first; fall back to muted autoplay
+    video.muted = false;
+    video.volume = 1;
+    video.play().then(() => {
+      // Autoplay with audio worked — no hint needed
+      setShowUnmuteHint(false);
+    }).catch(() => {
+      // Browser blocked audio autoplay — play muted and show hint
+      video.muted = true;
+      setShowUnmuteHint(true);
+      video.play().catch(() => {});
+    });
 
     return () => {
       video.removeEventListener("ended", onEnded);
@@ -59,8 +73,7 @@ export default function Home() {
         <video
           ref={introVideoRef}
           className="absolute inset-0 w-full h-full object-cover"
-          src="/public/VideoInicio.mp4"
-          muted
+          src="/VideoInicio.mp4"
           autoPlay
           playsInline
           preload="auto"
@@ -81,6 +94,19 @@ export default function Home() {
               "radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.7) 100%)",
           }}
         />
+
+        {/* Unmute hint */}
+        {showUnmuteHint && (
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[3] px-5 py-2.5 bg-white/10 backdrop-blur-md text-white rounded-full text-xs sm:text-sm font-medium tracking-wide border border-white/20 animate-pulse cursor-pointer"
+            onClick={() => {
+              const v = introVideoRef.current;
+              if (v) { v.muted = false; v.volume = 1; }
+              setShowUnmuteHint(false);
+            }}
+          >
+            Toca para activar el sonido
+          </div>
+        )}
 
         {/* Skip */}
         <button
