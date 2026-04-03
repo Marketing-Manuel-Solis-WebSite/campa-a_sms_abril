@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 
 const YOUTUBE_ID = "3Z6BOOCBgas";
-const INTRO_SECONDS = 15;
 
 export default function Home() {
   const [phase, setPhase] = useState<"intro" | "flash" | "main">("intro");
@@ -14,6 +13,8 @@ export default function Home() {
   const goToMain = useCallback(() => {
     if (transitioned.current) return;
     transitioned.current = true;
+    const video = introVideoRef.current;
+    if (video) video.pause();
     setPhase("flash");
     setTimeout(() => setPhase("main"), 800);
   }, []);
@@ -23,49 +24,38 @@ export default function Home() {
     const video = introVideoRef.current;
     if (!video) return;
 
-    const onTimeUpdate = () => {
-      if (video.currentTime >= INTRO_SECONDS) {
-        video.pause();
-        goToMain();
-      }
-    };
+    /* When video ends naturally → go to main */
+    const onEnded = () => goToMain();
 
-    /* Prevent user from pausing */
+    /* Prevent user from pausing (re-play if paused and not transitioning) */
     const onPause = () => {
-      if (video.currentTime < INTRO_SECONDS && !transitioned.current) {
-        video.play();
+      if (!video.ended && !transitioned.current) {
+        video.play().catch(() => {});
       }
     };
 
-    /* Once video is playing, try to unmute */
-    const onPlaying = () => {
-      video.muted = false;
-      video.volume = 1;
-    };
-
-    /* Unmute on any user interaction (touch/click anywhere) */
+    /* Unmute on any user touch/click (e.g. tapping "Saltar") */
     const unmute = () => {
-      if (video.muted) {
-        video.muted = false;
-        video.volume = 1;
+      const v = introVideoRef.current;
+      if (v && v.muted) {
+        v.muted = false;
+        v.volume = 1;
       }
     };
 
-    video.addEventListener("timeupdate", onTimeUpdate);
+    video.addEventListener("ended", onEnded);
     video.addEventListener("pause", onPause);
-    video.addEventListener("playing", onPlaying);
     document.addEventListener("touchstart", unmute, { once: true });
     document.addEventListener("click", unmute, { once: true });
 
-    /* Ensure playing (autoPlay attribute handles initial, this is backup) */
+    /* Ensure playing */
     if (video.paused) {
       video.play().catch(() => {});
     }
 
     return () => {
-      video.removeEventListener("timeupdate", onTimeUpdate);
+      video.removeEventListener("ended", onEnded);
       video.removeEventListener("pause", onPause);
-      video.removeEventListener("playing", onPlaying);
       document.removeEventListener("touchstart", unmute);
       document.removeEventListener("click", unmute);
     };
@@ -73,7 +63,7 @@ export default function Home() {
 
   return (
     <>
-      {/* ═══════════ INTRO: 15-second video ═══════════ */}
+      {/* ═══════════ INTRO: full video, skip available ═══════════ */}
       {phase === "intro" && (
         <div className="fixed inset-0 z-50 bg-black overflow-hidden">
           <video
@@ -108,17 +98,6 @@ export default function Home() {
           >
             Saltar
           </button>
-
-          {/* Progress bar */}
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10 z-[3]">
-            <div
-              className="h-full rounded-r-full"
-              style={{
-                animation: "progress 15s linear forwards",
-                background: "linear-gradient(90deg, #C5A55A, #E5D5A0)",
-              }}
-            />
-          </div>
         </div>
       )}
 
@@ -200,13 +179,15 @@ export default function Home() {
           </div>
 
           {/* ── CTA ── */}
-          <div className="relative z-10 shrink-0 text-center max-w-[300px] sm:max-w-sm mx-auto pb-1">
-            <p className="text-[11px] sm:text-sm md:text-base text-navy/80 font-medium leading-snug">
-              Responde{" "}
-              <span className="font-bold text-navy">
-                &ldquo;ME INTERESA&rdquo;
-              </span>{" "}
-              a este mismo SMS y te contactaremos hoy para retomar tu consulta.
+          <div className="relative z-10 shrink-0 text-center max-w-[300px] sm:max-w-sm mx-auto pb-1 flex flex-col items-center gap-1.5">
+            <a
+              href="sms:+17133227646?&body=ME%20INTERESA"
+              className="inline-block px-6 py-2.5 sm:py-3 bg-gradient-to-r from-gold to-gold-light text-navy-dark font-bold text-sm sm:text-base rounded-full shadow-[0_4px_20px_rgba(197,165,90,0.5)] hover:shadow-[0_4px_30px_rgba(197,165,90,0.7)] active:scale-95 transition-all tracking-wide"
+            >
+              ENVIAR &ldquo;ME INTERESA&rdquo;
+            </a>
+            <p className="text-[10px] sm:text-xs text-navy/60 leading-snug">
+              Te contactaremos hoy para retomar tu consulta.
             </p>
           </div>
         </main>
