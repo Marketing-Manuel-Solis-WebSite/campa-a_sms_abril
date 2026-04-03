@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 
 const YOUTUBE_ID = "3Z6BOOCBgas";
+const PHONE = "+17133227646";
 
 export default function Home() {
   const [phase, setPhase] = useState<"intro" | "flash" | "main">("intro");
@@ -20,21 +21,11 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (phase !== "intro") return;
     const video = introVideoRef.current;
     if (!video) return;
 
-    /* When video ends naturally → go to main */
     const onEnded = () => goToMain();
 
-    /* Prevent user from pausing (re-play if paused and not transitioning) */
-    const onPause = () => {
-      if (!video.ended && !transitioned.current) {
-        video.play().catch(() => {});
-      }
-    };
-
-    /* Unmute on any user touch/click (e.g. tapping "Saltar") */
     const unmute = () => {
       const v = introVideoRef.current;
       if (v && v.muted) {
@@ -44,64 +35,63 @@ export default function Home() {
     };
 
     video.addEventListener("ended", onEnded);
-    video.addEventListener("pause", onPause);
     document.addEventListener("touchstart", unmute, { once: true });
     document.addEventListener("click", unmute, { once: true });
 
-    /* Ensure playing */
-    if (video.paused) {
-      video.play().catch(() => {});
-    }
+    video.play().catch(() => {});
 
     return () => {
       video.removeEventListener("ended", onEnded);
-      video.removeEventListener("pause", onPause);
       document.removeEventListener("touchstart", unmute);
       document.removeEventListener("click", unmute);
     };
-  }, [phase, goToMain]);
+  }, [goToMain]);
+
+  const isIntro = phase === "intro";
 
   return (
     <>
-      {/* ═══════════ INTRO: full video, skip available ═══════════ */}
-      {phase === "intro" && (
-        <div className="fixed inset-0 z-50 bg-black overflow-hidden">
-          <video
-            ref={introVideoRef}
-            className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-            src="/VideoInicio.mp4"
-            muted
-            autoPlay
-            playsInline
-            preload="auto"
-          />
+      {/* ═══════════ INTRO VIDEO (always in DOM for preload) ═══════════ */}
+      <div
+        className="fixed inset-0 z-50 bg-black overflow-hidden"
+        style={{ display: isIntro ? "block" : "none" }}
+      >
+        <video
+          ref={introVideoRef}
+          className="absolute inset-0 w-full h-full object-cover"
+          src="/VideoInicio.mp4"
+          muted
+          autoPlay
+          playsInline
+          preload="auto"
+          style={{ pointerEvents: "none" }}
+        />
 
-          {/* Block all interaction with video */}
-          <div
-            className="absolute inset-0 z-[1]"
-            onContextMenu={(e) => e.preventDefault()}
-          />
+        {/* Block interaction */}
+        <div
+          className="absolute inset-0 z-[1]"
+          onContextMenu={(e) => e.preventDefault()}
+        />
 
-          {/* Cinematic vignette */}
-          <div
-            className="absolute inset-0 pointer-events-none z-[2]"
-            style={{
-              background:
-                "radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.7) 100%)",
-            }}
-          />
+        {/* Vignette */}
+        <div
+          className="absolute inset-0 pointer-events-none z-[2]"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.7) 100%)",
+          }}
+        />
 
-          {/* Skip */}
-          <button
-            onClick={goToMain}
-            className="absolute bottom-8 right-6 sm:right-8 z-[3] px-5 py-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/25 transition-all text-xs sm:text-sm font-medium tracking-widest uppercase border border-white/20"
-          >
-            Saltar
-          </button>
-        </div>
-      )}
+        {/* Skip */}
+        <button
+          onClick={goToMain}
+          className="absolute bottom-8 right-6 sm:right-8 z-[3] px-5 py-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/25 transition-all text-xs sm:text-sm font-medium tracking-widest uppercase border border-white/20"
+        >
+          Saltar
+        </button>
+      </div>
 
-      {/* ═══════════ FLASH TRANSITION ═══════════ */}
+      {/* ═══════════ FLASH ═══════════ */}
       {phase === "flash" && (
         <div className="fixed inset-0 z-50 bg-white animate-flash" />
       )}
@@ -112,7 +102,7 @@ export default function Home() {
           className="overflow-hidden flex flex-col items-center px-3 sm:px-5 py-2 sm:py-4 md:py-6 relative"
           style={{ height: "100dvh" }}
         >
-          {/* ── Background ── */}
+          {/* Background */}
           <div
             className="absolute inset-0 z-0"
             style={{
@@ -137,7 +127,7 @@ export default function Home() {
             <div className="absolute top-[55%] left-1/2 -translate-x-1/2 w-72 h-32 bg-gold/8 rounded-full blur-3xl" />
           </div>
 
-          {/* ── Logo ── */}
+          {/* Logo */}
           <div className="relative z-10 shrink-0">
             <Image
               src="/LogoManuelSolis.png"
@@ -149,7 +139,7 @@ export default function Home() {
             />
           </div>
 
-          {/* ── Center: Title + YouTube Video ── */}
+          {/* Center: Title + YouTube Video */}
           <div className="relative z-10 flex-1 flex flex-col items-center justify-center min-h-0 w-full gap-1.5 sm:gap-2 py-1">
             <div className="text-center shrink-0">
               <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-black tracking-tight text-gradient-gold leading-none">
@@ -178,16 +168,16 @@ export default function Home() {
             </div>
           </div>
 
-          {/* ── CTA ── */}
+          {/* CTA — llamada telefónica */}
           <div className="relative z-10 shrink-0 text-center max-w-[300px] sm:max-w-sm mx-auto pb-1 flex flex-col items-center gap-1.5">
             <a
-              href="sms:+17133227646?&body=ME%20INTERESA"
+              href={`tel:${PHONE}`}
               className="inline-block px-6 py-2.5 sm:py-3 bg-gradient-to-r from-gold to-gold-light text-navy-dark font-bold text-sm sm:text-base rounded-full shadow-[0_4px_20px_rgba(197,165,90,0.5)] hover:shadow-[0_4px_30px_rgba(197,165,90,0.7)] active:scale-95 transition-all tracking-wide"
             >
-              ENVIAR &ldquo;ME INTERESA&rdquo;
+              RETOMA TU PROCESO
             </a>
             <p className="text-[10px] sm:text-xs text-navy/60 leading-snug">
-              Te contactaremos hoy para retomar tu consulta.
+              Llama ahora y te atendemos hoy.
             </p>
           </div>
         </main>
