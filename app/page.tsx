@@ -18,7 +18,6 @@ export default function Home() {
     setTimeout(() => setPhase("main"), 800);
   }, []);
 
-  /* ── Intro video: autoplay with sound, fallback to muted ── */
   useEffect(() => {
     if (phase !== "intro") return;
     const video = introVideoRef.current;
@@ -31,28 +30,44 @@ export default function Home() {
       }
     };
 
+    /* Prevent user from pausing */
     const onPause = () => {
       if (video.currentTime < INTRO_SECONDS && !transitioned.current) {
         video.play();
       }
     };
 
+    /* Once video is playing, try to unmute */
+    const onPlaying = () => {
+      video.muted = false;
+      video.volume = 1;
+    };
+
+    /* Unmute on any user interaction (touch/click anywhere) */
+    const unmute = () => {
+      if (video.muted) {
+        video.muted = false;
+        video.volume = 1;
+      }
+    };
+
     video.addEventListener("timeupdate", onTimeUpdate);
     video.addEventListener("pause", onPause);
+    video.addEventListener("playing", onPlaying);
+    document.addEventListener("touchstart", unmute, { once: true });
+    document.addEventListener("click", unmute, { once: true });
 
-    /* Try with sound first, fall back to muted */
-    video.muted = false;
-    video.volume = 1;
-    video.play().catch(() => {
-      video.muted = true;
-      video.play().catch(() => {
-        setTimeout(goToMain, INTRO_SECONDS * 1000);
-      });
-    });
+    /* Ensure playing (autoPlay attribute handles initial, this is backup) */
+    if (video.paused) {
+      video.play().catch(() => {});
+    }
 
     return () => {
       video.removeEventListener("timeupdate", onTimeUpdate);
       video.removeEventListener("pause", onPause);
+      video.removeEventListener("playing", onPlaying);
+      document.removeEventListener("touchstart", unmute);
+      document.removeEventListener("click", unmute);
     };
   }, [phase, goToMain]);
 
@@ -65,11 +80,13 @@ export default function Home() {
             ref={introVideoRef}
             className="absolute inset-0 w-full h-full object-cover pointer-events-none"
             src="/VideoInicio.mp4"
+            muted
+            autoPlay
             playsInline
             preload="auto"
           />
 
-          {/* Block all interaction */}
+          {/* Block all interaction with video */}
           <div
             className="absolute inset-0 z-[1]"
             onContextMenu={(e) => e.preventDefault()}
