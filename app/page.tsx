@@ -59,7 +59,7 @@ export default function Home() {
         <video
           ref={introVideoRef}
           className="absolute inset-0 w-full h-full object-cover"
-          src="/VideoInicio.mp4"
+          src="/public/VideoInicio.mp4"
           muted
           autoPlay
           playsInline
