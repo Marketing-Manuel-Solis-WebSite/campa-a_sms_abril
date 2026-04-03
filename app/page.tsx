@@ -20,44 +20,47 @@ export default function Home() {
     setTimeout(() => setPhase("main"), 800);
   }, []);
 
-  const [showUnmuteHint, setShowUnmuteHint] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+
+  const toggleMute = useCallback(() => {
+    const v = introVideoRef.current;
+    if (!v) return;
+    if (v.muted) {
+      v.muted = false;
+      v.volume = 1;
+      setIsMuted(false);
+    } else {
+      v.muted = true;
+      setIsMuted(true);
+    }
+  }, []);
 
   useEffect(() => {
     const video = introVideoRef.current;
     if (!video) return;
 
     const onEnded = () => goToMain();
-
-    const unmute = () => {
-      const v = introVideoRef.current;
-      if (v && v.muted) {
-        v.muted = false;
-        v.volume = 1;
-        setShowUnmuteHint(false);
-      }
-    };
-
     video.addEventListener("ended", onEnded);
-    document.addEventListener("touchstart", unmute, { once: true });
-    document.addEventListener("click", unmute, { once: true });
 
-    // Try to play with audio first; fall back to muted autoplay
-    video.muted = false;
-    video.volume = 1;
+    // Always start muted (guaranteed autoplay), then try to unmute
+    video.muted = true;
     video.play().then(() => {
-      // Autoplay with audio worked — no hint needed
-      setShowUnmuteHint(false);
-    }).catch(() => {
-      // Browser blocked audio autoplay — play muted and show hint
-      video.muted = true;
-      setShowUnmuteHint(true);
-      video.play().catch(() => {});
-    });
+      // Playing muted — now try to unmute programmatically
+      video.muted = false;
+      video.volume = 1;
+      // If the browser allows it, great
+      setIsMuted(false);
+    }).catch(() => {});
+
+    // If browser re-mutes or blocks, detect it
+    const onVolumeChange = () => {
+      setIsMuted(video.muted);
+    };
+    video.addEventListener("volumechange", onVolumeChange);
 
     return () => {
       video.removeEventListener("ended", onEnded);
-      document.removeEventListener("touchstart", unmute);
-      document.removeEventListener("click", unmute);
+      video.removeEventListener("volumechange", onVolumeChange);
     };
   }, [goToMain]);
 
@@ -74,6 +77,7 @@ export default function Home() {
           ref={introVideoRef}
           className="absolute inset-0 w-full h-full object-cover"
           src="/VideoInicio.mp4"
+          muted
           autoPlay
           playsInline
           preload="auto"
@@ -95,16 +99,29 @@ export default function Home() {
           }}
         />
 
-        {/* Unmute hint */}
-        {showUnmuteHint && (
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[3] px-5 py-2.5 bg-white/10 backdrop-blur-md text-white rounded-full text-xs sm:text-sm font-medium tracking-wide border border-white/20 animate-pulse cursor-pointer"
-            onClick={() => {
-              const v = introVideoRef.current;
-              if (v) { v.muted = false; v.volume = 1; }
-              setShowUnmuteHint(false);
-            }}
-          >
-            Toca para activar el sonido
+        {/* Sound toggle button */}
+        <button
+          onClick={toggleMute}
+          className="absolute top-6 right-6 sm:right-8 z-[3] w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-white/15 backdrop-blur-md rounded-full border border-white/25 hover:bg-white/25 transition-all active:scale-90"
+          aria-label={isMuted ? "Activar sonido" : "Silenciar"}
+        >
+          {isMuted ? (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 sm:w-7 sm:h-7">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+              <line x1="23" y1="9" x2="17" y2="15" />
+              <line x1="17" y1="9" x2="23" y2="15" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 sm:w-7 sm:h-7">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+            </svg>
+          )}
+        </button>
+        {isMuted && (
+          <div className="absolute top-[4.5rem] sm:top-[5.25rem] right-6 sm:right-8 z-[3] text-white/80 text-[10px] sm:text-xs text-center font-medium animate-pulse">
+            Toca para sonido
           </div>
         )}
 
@@ -198,12 +215,13 @@ export default function Home() {
           <div className="relative z-10 shrink-0 text-center max-w-[300px] sm:max-w-sm mx-auto pb-1 flex flex-col items-center gap-1.5">
             <a
               href={`tel:${PHONE}`}
-              className="inline-block px-6 py-2.5 sm:py-3 bg-gradient-to-r from-gold to-gold-light text-navy-dark font-bold text-sm sm:text-base rounded-full shadow-[0_4px_20px_rgba(197,165,90,0.5)] hover:shadow-[0_4px_30px_rgba(197,165,90,0.7)] active:scale-95 transition-all tracking-wide"
+              className="inline-flex flex-col items-center px-8 py-3 sm:py-3.5 bg-gradient-to-b from-green-500 to-green-700 text-white font-bold text-base sm:text-lg rounded-full shadow-[0_4px_24px_rgba(34,197,94,0.5)] hover:shadow-[0_4px_32px_rgba(34,197,94,0.7)] active:scale-95 transition-all tracking-wide"
             >
-              RETOMA TU PROCESO
+              <span>LLAMA AHORA</span>
+              <span className="text-xs sm:text-sm font-semibold tracking-wider opacity-90">(713) 322-7646</span>
             </a>
             <p className="text-[10px] sm:text-xs text-navy/60 leading-snug">
-              Llama ahora y te atendemos hoy.
+              Te atendemos hoy mismo.
             </p>
           </div>
         </main>
