@@ -42,25 +42,13 @@ export default function Home() {
     const onEnded = () => goToMain();
     video.addEventListener("ended", onEnded);
 
-    // Always start muted (guaranteed autoplay), then try to unmute
+    // Start muted — autoplay guaranteed. User must tap to unmute.
     video.muted = true;
-    video.play().then(() => {
-      // Playing muted — now try to unmute programmatically
-      video.muted = false;
-      video.volume = 1;
-      // If the browser allows it, great
-      setIsMuted(false);
-    }).catch(() => {});
-
-    // If browser re-mutes or blocks, detect it
-    const onVolumeChange = () => {
-      setIsMuted(video.muted);
-    };
-    video.addEventListener("volumechange", onVolumeChange);
+    setIsMuted(true);
+    video.play().catch(() => {});
 
     return () => {
       video.removeEventListener("ended", onEnded);
-      video.removeEventListener("volumechange", onVolumeChange);
     };
   }, [goToMain]);
 
@@ -99,31 +87,32 @@ export default function Home() {
           }}
         />
 
-        {/* Sound toggle button */}
+        {/* Sound toggle button — large & centered so user sees it */}
         <button
           onClick={toggleMute}
-          className="absolute top-6 right-6 sm:right-8 z-[3] w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-white/15 backdrop-blur-md rounded-full border border-white/25 hover:bg-white/25 transition-all active:scale-90"
-          aria-label={isMuted ? "Activar sonido" : "Silenciar"}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[3] flex flex-col items-center gap-2 active:scale-90 transition-all"
         >
-          {isMuted ? (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 sm:w-7 sm:h-7">
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-              <line x1="23" y1="9" x2="17" y2="15" />
-              <line x1="17" y1="9" x2="23" y2="15" />
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 sm:w-7 sm:h-7">
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-            </svg>
+          <div className={`w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center rounded-full border-2 ${isMuted ? "bg-white/20 border-white/40 animate-pulse" : "bg-white/10 border-white/20"} backdrop-blur-md`}>
+            {isMuted ? (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-9 h-9 sm:w-11 sm:h-11">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <line x1="23" y1="9" x2="17" y2="15" />
+                <line x1="17" y1="9" x2="23" y2="15" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-9 h-9 sm:w-11 sm:h-11">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              </svg>
+            )}
+          </div>
+          {isMuted && (
+            <span className="text-white text-sm sm:text-base font-bold tracking-wide drop-shadow-lg">
+              ACTIVAR SONIDO
+            </span>
           )}
         </button>
-        {isMuted && (
-          <div className="absolute top-[4.5rem] sm:top-[5.25rem] right-6 sm:right-8 z-[3] text-white/80 text-[10px] sm:text-xs text-center font-medium animate-pulse">
-            Toca para sonido
-          </div>
-        )}
 
         {/* Skip */}
         <button
