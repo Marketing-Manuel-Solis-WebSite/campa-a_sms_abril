@@ -107,21 +107,21 @@ export default function Home() {
           }}
         />
 
-        {/* Sound toggle button — large & centered so user sees it */}
+        {/* Sound toggle button — top-left corner, small */}
         {videoReady && (
           <button
             onClick={toggleMute}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[4] flex flex-col items-center gap-2 active:scale-90 transition-all"
+            className="absolute top-4 left-4 z-[4] flex items-center gap-1.5 active:scale-90 transition-all"
           >
-            <div className={`w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center rounded-full border-2 ${isMuted ? "bg-white/20 border-white/40 animate-pulse" : "bg-white/10 border-white/20"} backdrop-blur-md`}>
+            <div className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center rounded-full border ${isMuted ? "bg-white/20 border-white/40 animate-pulse" : "bg-white/10 border-white/20"} backdrop-blur-md`}>
               {isMuted ? (
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-9 h-9 sm:w-11 sm:h-11">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 sm:w-6 sm:h-6">
                   <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                   <line x1="23" y1="9" x2="17" y2="15" />
                   <line x1="17" y1="9" x2="23" y2="15" />
                 </svg>
               ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-9 h-9 sm:w-11 sm:h-11">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 sm:w-6 sm:h-6">
                   <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                   <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
                   <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
@@ -129,8 +129,8 @@ export default function Home() {
               )}
             </div>
             {isMuted && (
-              <span className="text-white text-sm sm:text-base font-bold tracking-wide drop-shadow-lg">
-                ACTIVAR SONIDO
+              <span className="text-white text-[10px] sm:text-xs font-bold tracking-wide drop-shadow-lg">
+                SONIDO
               </span>
             )}
           </button>
@@ -182,14 +182,14 @@ export default function Home() {
           </div>
 
           {/* Logo */}
-          <div className="relative z-10 shrink-0">
+          <div className="relative z-10 shrink-0 mt-2 sm:mt-3">
             <Image
               src="/LogoManuelSolis.png"
               alt="Law Offices of Manuel Solis"
-              width={280}
-              height={70}
+              width={400}
+              height={100}
               preload
-              className="h-9 sm:h-12 md:h-16 w-auto mix-blend-multiply"
+              className="h-16 sm:h-20 md:h-28 w-auto mix-blend-multiply"
             />
           </div>
 
@@ -223,7 +223,7 @@ export default function Home() {
           </div>
 
           {/* CTA — llamada telefónica */}
-          <div className="relative z-10 shrink-0 text-center max-w-[300px] sm:max-w-sm mx-auto pb-1 flex flex-col items-center gap-1.5">
+          <div className="relative z-10 shrink-0 text-center max-w-[300px] sm:max-w-sm mx-auto pb-1 -mt-2 sm:-mt-3 flex flex-col items-center gap-1.5">
             <a
               href={`tel:${PHONE}`}
               className="inline-flex flex-col items-center px-8 py-3 sm:py-3.5 bg-gradient-to-b from-green-500 to-green-700 text-white font-bold text-base sm:text-lg rounded-full shadow-[0_4px_24px_rgba(34,197,94,0.5)] hover:shadow-[0_4px_32px_rgba(34,197,94,0.7)] active:scale-95 transition-all tracking-wide"
