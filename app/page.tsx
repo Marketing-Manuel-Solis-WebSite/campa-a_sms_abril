@@ -10,6 +10,7 @@ export default function Home() {
   const [phase, setPhase] = useState<"intro" | "flash" | "main">("intro");
   const introVideoRef = useRef<HTMLVideoElement>(null);
   const transitioned = useRef(false);
+  const [videoReady, setVideoReady] = useState(false);
 
   const goToMain = useCallback(() => {
     if (transitioned.current) return;
@@ -40,7 +41,14 @@ export default function Home() {
     if (!video) return;
 
     const onEnded = () => goToMain();
+    const onCanPlay = () => setVideoReady(true);
     video.addEventListener("ended", onEnded);
+    video.addEventListener("canplay", onCanPlay);
+
+    // Skip intro after 8s if video still hasn't loaded
+    const timeout = setTimeout(() => {
+      if (!videoReady) goToMain();
+    }, 8000);
 
     // Start muted — autoplay guaranteed. User must tap to unmute.
     video.muted = true;
@@ -49,8 +57,10 @@ export default function Home() {
 
     return () => {
       video.removeEventListener("ended", onEnded);
+      video.removeEventListener("canplay", onCanPlay);
+      clearTimeout(timeout);
     };
-  }, [goToMain]);
+  }, [goToMain, videoReady]);
 
   const isIntro = phase === "intro";
 
@@ -63,24 +73,34 @@ export default function Home() {
       >
         <video
           ref={introVideoRef}
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
           src="/VideoInicio.mp4"
           muted
           autoPlay
           playsInline
           preload="auto"
-          style={{ pointerEvents: "none" }}
+          style={{ pointerEvents: "none", opacity: videoReady ? 1 : 0 }}
         />
+
+        {/* Loading indicator — shown while video buffers */}
+        {!videoReady && (
+          <div className="absolute inset-0 z-[1] flex flex-col items-center justify-center gap-4">
+            <div className="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+            <span className="text-white/70 text-sm tracking-widest uppercase animate-pulse">
+              Cargando...
+            </span>
+          </div>
+        )}
 
         {/* Block interaction */}
         <div
-          className="absolute inset-0 z-[1]"
+          className="absolute inset-0 z-[2]"
           onContextMenu={(e) => e.preventDefault()}
         />
 
         {/* Vignette */}
         <div
-          className="absolute inset-0 pointer-events-none z-[2]"
+          className="absolute inset-0 pointer-events-none z-[3]"
           style={{
             background:
               "radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.7) 100%)",
@@ -88,36 +108,38 @@ export default function Home() {
         />
 
         {/* Sound toggle button — large & centered so user sees it */}
-        <button
-          onClick={toggleMute}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[3] flex flex-col items-center gap-2 active:scale-90 transition-all"
-        >
-          <div className={`w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center rounded-full border-2 ${isMuted ? "bg-white/20 border-white/40 animate-pulse" : "bg-white/10 border-white/20"} backdrop-blur-md`}>
-            {isMuted ? (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-9 h-9 sm:w-11 sm:h-11">
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                <line x1="23" y1="9" x2="17" y2="15" />
-                <line x1="17" y1="9" x2="23" y2="15" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-9 h-9 sm:w-11 sm:h-11">
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-              </svg>
+        {videoReady && (
+          <button
+            onClick={toggleMute}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[4] flex flex-col items-center gap-2 active:scale-90 transition-all"
+          >
+            <div className={`w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center rounded-full border-2 ${isMuted ? "bg-white/20 border-white/40 animate-pulse" : "bg-white/10 border-white/20"} backdrop-blur-md`}>
+              {isMuted ? (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-9 h-9 sm:w-11 sm:h-11">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <line x1="23" y1="9" x2="17" y2="15" />
+                  <line x1="17" y1="9" x2="23" y2="15" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-9 h-9 sm:w-11 sm:h-11">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                </svg>
+              )}
+            </div>
+            {isMuted && (
+              <span className="text-white text-sm sm:text-base font-bold tracking-wide drop-shadow-lg">
+                ACTIVAR SONIDO
+              </span>
             )}
-          </div>
-          {isMuted && (
-            <span className="text-white text-sm sm:text-base font-bold tracking-wide drop-shadow-lg">
-              ACTIVAR SONIDO
-            </span>
-          )}
-        </button>
+          </button>
+        )}
 
         {/* Skip */}
         <button
           onClick={goToMain}
-          className="absolute bottom-8 right-6 sm:right-8 z-[3] px-5 py-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/25 transition-all text-xs sm:text-sm font-medium tracking-widest uppercase border border-white/20"
+          className="absolute bottom-8 right-6 sm:right-8 z-[4] px-5 py-2.5 bg-white/10 backdrop-blur-md text-white rounded-full hover:bg-white/25 transition-all text-xs sm:text-sm font-medium tracking-widest uppercase border border-white/20"
         >
           Saltar
         </button>
