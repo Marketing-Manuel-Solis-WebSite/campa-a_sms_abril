@@ -196,10 +196,10 @@ export default function Home() {
           {/* Center: Title + YouTube Video */}
           <div className="relative z-10 flex-1 flex flex-col items-center justify-center min-h-0 w-full gap-1.5 sm:gap-2 py-1">
             <div className="text-center shrink-0">
-              <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-black tracking-tight text-gradient-gold leading-none">
+              <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-black tracking-tight text-gradient-gold leading-none">
                 CASO REAL DE ÉXITO
               </h1>
-              <p className="text-[10px] sm:text-xs md:text-sm text-navy/70 max-w-[260px] sm:max-w-sm mx-auto mt-1 leading-snug">
+              <p className="text-xs sm:text-sm md:text-base lg:text-lg text-navy/70 max-w-[300px] sm:max-w-md mx-auto mt-1.5 leading-snug">
                 Conoce este caso real de reunificación familiar, respaldado por
                 los 35 años de experiencia de la Firma del Abogado Manuel Solís.
               </p>
@@ -220,20 +220,20 @@ export default function Home() {
                 title="Uniendo Familias - Ep. 2 Eva López"
               />
             </div>
-          </div>
 
-          {/* CTA — llamada telefónica */}
-          <div className="relative z-10 shrink-0 text-center max-w-[300px] sm:max-w-sm mx-auto pb-1 -mt-4 sm:-mt-6 flex flex-col items-center gap-1.5">
-            <a
-              href={`tel:${PHONE}`}
-              className="inline-flex flex-col items-center px-8 py-3 sm:py-3.5 bg-gradient-to-b from-green-500 to-green-700 text-white font-bold text-base sm:text-lg rounded-full shadow-[0_4px_24px_rgba(34,197,94,0.5)] hover:shadow-[0_4px_32px_rgba(34,197,94,0.7)] active:scale-95 transition-all tracking-wide"
-            >
-              <span>LLAMA AHORA</span>
-              <span className="text-xs sm:text-sm font-semibold tracking-wider opacity-90">(713) 322-7646</span>
-            </a>
-            <p className="text-[10px] sm:text-xs text-navy/60 leading-snug">
-              Te atendemos hoy mismo.
-            </p>
+            {/* CTA — llamada telefónica */}
+            <div className="shrink-0 text-center flex flex-col items-center gap-1.5">
+              <a
+                href={`tel:${PHONE}`}
+                className="inline-flex flex-col items-center px-8 py-3 sm:py-3.5 bg-gradient-to-b from-green-500 to-green-700 text-white font-bold text-base sm:text-lg rounded-full shadow-[0_4px_24px_rgba(34,197,94,0.5)] hover:shadow-[0_4px_32px_rgba(34,197,94,0.7)] active:scale-95 transition-all tracking-wide"
+              >
+                <span>LLAMA AHORA</span>
+                <span className="text-xs sm:text-sm font-semibold tracking-wider opacity-90">(713) 322-7646</span>
+              </a>
+              <p className="text-[10px] sm:text-xs text-navy/60 leading-snug">
+                Te atendemos hoy mismo.
+              </p>
+            </div>
           </div>
         </main>
       </div>
