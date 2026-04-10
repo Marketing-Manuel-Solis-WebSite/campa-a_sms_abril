@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
+import { track } from "@vercel/analytics";
 
 const YOUTUBE_ID = "3Z6BOOCBgas";
 const PHONE = "+17133227646";
@@ -225,6 +226,7 @@ export default function Home() {
             <div className="shrink-0 text-center flex flex-col items-center gap-1.5">
               <a
                 href={`tel:${PHONE}`}
+                onClick={() => track("call_click", { phone: PHONE, value: 1 })}
                 className="inline-flex flex-col items-center px-8 py-3 sm:py-3.5 bg-gradient-to-b from-green-500 to-green-700 text-white font-bold text-base sm:text-lg rounded-full shadow-[0_4px_24px_rgba(34,197,94,0.5)] hover:shadow-[0_4px_32px_rgba(34,197,94,0.7)] active:scale-95 transition-all tracking-wide"
               >
                 <span>LLAMA AHORA</span>
