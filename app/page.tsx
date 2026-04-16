@@ -144,7 +144,7 @@ export default function Home() {
               Líneas abiertas — te atendemos ahora mismo
             </p>
             <p className="text-[9px] sm:text-[10px] text-navy/40">
-              Hablamos español &bull; Sin costo la primera consulta
+              Hablamos español &bull;
             </p>
           </div>
         </div>
